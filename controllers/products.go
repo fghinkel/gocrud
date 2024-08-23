@@ -58,3 +58,50 @@ func PostProduct(writer http.ResponseWriter, r *http.Request) {
 
 	http.Redirect(writer, r, "/", http.StatusMovedPermanently)
 }
+
+func DeleteProduct(writer http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	models.DeleteProduct(id)
+	http.Redirect(writer, r, "/", http.StatusMovedPermanently)
+
+}
+
+func EditProduct(writer http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	product := models.FindProduct(id)
+
+	err := templates.ExecuteTemplate(writer, "Edit", product)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+}
+
+func PutProduct(writer http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		fmt.Println("Error:", "The requested source only allows POST Method")
+	}
+	id := r.FormValue("id")
+	name := r.FormValue("name")
+	price := r.FormValue("price")
+	quantity := r.FormValue("quantity")
+	description := r.FormValue("description")
+
+	idToInt, err := strconv.Atoi(id)
+	if err != nil {
+		log.Println("Erro na conversão do id:", err)
+	}
+
+	priceToFloat, err := strconv.ParseFloat(price, 64)
+	if err != nil {
+		log.Println("Erro na conversão do preço:", err)
+	}
+
+	quantityToInt, err := strconv.Atoi(quantity)
+	if err != nil {
+		log.Println("Erro na conversão da quantidade:", err)
+	}
+
+	models.UpdateProduct(idToInt, quantityToInt, name, description, priceToFloat)
+	http.Redirect(writer, r, "/", http.StatusMovedPermanently)
+}

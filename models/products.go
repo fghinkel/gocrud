@@ -1,6 +1,8 @@
 package models
 
-import "gocrud/db"
+import (
+	"gocrud/db"
+)
 
 // We can create a entity using a struct with a type,
 // this is similar to create a interface on typescript.
@@ -13,9 +15,9 @@ import "gocrud/db"
 type Product struct {
 	Id          int
 	Name        string
-	Description string
 	Price       float64
 	Quantity    int
+	Description string
 }
 
 func SearchAllProducts() []Product {
@@ -52,5 +54,54 @@ func PostProduct(name, description string, price float64, quantity int) {
 
 	query.Exec(name, description, price, quantity)
 	defer db.Close()
+}
 
+func DeleteProduct(id string) {
+	db := db.ConnectWithDatabase()
+
+	query, queryErr := db.Prepare("delete from products where id = $1")
+	if queryErr != nil {
+		panic(queryErr.Error())
+	}
+
+	query.Exec(id)
+	defer db.Close()
+}
+
+func FindProduct(id string) Product {
+	db := db.ConnectWithDatabase()
+
+	product, err := db.Query("select * from products where id = $1 order by id desc", id)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	productSerialized := Product{}
+	for product.Next() {
+		err = product.Scan(
+			&productSerialized.Id,
+			&productSerialized.Name,
+			&productSerialized.Description,
+			&productSerialized.Price,
+			&productSerialized.Quantity,
+		)
+
+		if err != nil {
+			panic(err.Error())
+		}
+	}
+
+	defer db.Close()
+	return productSerialized
+}
+
+func UpdateProduct(id, quantity int, name, description string, price float64) {
+	db := db.ConnectWithDatabase()
+	updateProduct, err := db.Prepare("update products set name=$1, description=$2, price=$3, quantity=$4 where id=$5")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	updateProduct.Exec(name, description, price, quantity, id)
+	defer db.Close()
 }
